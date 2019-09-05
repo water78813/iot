@@ -2,7 +2,7 @@ package manager
 
 import "fmt"
 
-type iotFunc interface {
+type IotFunc interface {
 	Start()
 	Run()
 	Stop()
@@ -11,21 +11,21 @@ type iotFunc interface {
 }
 
 type modMng struct {
-	iotModules map[string]iotFunc
+	iotModules map[string]IotFunc
 	reloadCh   chan struct{}
 }
 
 var manager = modMng{
-	iotModules: make(map[string]iotFunc),
+	iotModules: make(map[string]IotFunc),
 	reloadCh:   make(chan struct{}, 1),
 }
 
-//
+// Return the Iot Module Manager
 func GetMng() *modMng {
 	return &manager
 }
 
-func (mm *modMng) GetMod(name string) (*iotFunc, error) {
+func (mm *modMng) GetMod(name string) (*IotFunc, error) {
 	iot, ok := mm.iotModules[name]
 	if !ok {
 		return nil, fmt.Errorf("%s is not exisit", name)
@@ -37,7 +37,7 @@ func (mm *modMng) ModReload() {
 	mm.reloadCh <- struct{}{}
 }
 
-func (mm *modMng) AddMod(name string, mod iotFunc) {
+func (mm *modMng) AddMod(name string, mod IotFunc) {
 	mm.iotModules[name] = mod
 }
 func (mm *modMng) RemoveMod(name string) {

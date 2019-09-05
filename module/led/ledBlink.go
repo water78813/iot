@@ -2,9 +2,8 @@ package led
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
-	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/water78813/iot/manager"
@@ -16,55 +15,56 @@ type ledModule struct {
 	ledState  int
 	pin       string
 	ip        string
+	interval  string
 	funcState string
 	stopCh    chan struct{}
 }
 
 //
-func LedHandler(w http.ResponseWriter, req *http.Request) {
-	if req.Method == "POST" {
-		s, err := ioutil.ReadAll(req.Body)
-		if err != nil {
-			log.Fatal(err)
+func LedAccessor(m map[string]string) error {
+	pin := m["pin"]
+	host := m["host"]
+	interval := m["interval"]
+	status := m["status"]
+	mng := manager.GetMng()
+	led, err := (*mng).GetMod("led")
+	if err != nil {
+		lm := &ledModule{
+			funcState: "init",
+			ledState:  0,
+			pin:       pin,
+			ip:        host,
+			interval:  interval,
+			stopCh:    make(chan struct{}, 1),
 		}
-		mng := manager.GetMng()
-		led, err := (*mng).GetMod("led")
-		if err != nil {
-			lm := &ledModule{
-				funcState: "init",
-				ledState:  0,
-				pin:       "12",
-				ip:        "192.168.2.113:3030",
-				stopCh:    make(chan struct{}, 1),
-			}
-			mng.AddMod("led", lm)
-			if led, err = (*mng).GetMod("led"); err != nil {
-				w.WriteHeader(200)
-				w.Write([]byte("app fail"))
-			}
+		mng.AddMod("led", lm)
+		if led, err = (*mng).GetMod("led"); err != nil {
+			return err
 		}
-
-		if string(s) == "on" {
-			(*led).Start()
-			mng.ModReload()
-		} else if string(s) == "off" {
-			(*led).Stop()
-		} else if string(s) == "remove" {
-			mng.RemoveMod("led")
-		}
-		w.WriteHeader(200)
-	} else {
-		respContext := []byte("post is the only valid method")
-		w.Write(respContext)
 	}
+	fmt.Println("in accessor")
+	if status == "on" {
+		(*led).Start()
+		mng.ModReload()
+	} else if status == "off" {
+		(*led).Stop()
+	} else if status == "remove" {
+		if (*led).GetFuncState() != "on" {
+			(*led).Stop()
+		}
+		mng.RemoveMod("led")
+	}
+	return nil
 }
 
 func (lm *ledModule) Start() {
+	fmt.Println("start")
 	lm.funcState = "start"
 }
 
 func (lm *ledModule) Run() {
-	interval := time.Duration(time.Second)
+	interg, _ := strconv.Atoi(lm.interval)
+	interval := time.Duration(interg) * time.Second
 	next := time.Now()
 	adaptor := firmata.NewTCPAdaptor(lm.ip)
 	err := adaptor.Connect()

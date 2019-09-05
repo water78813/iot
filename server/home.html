@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Example</title>
+    </head>
+    <body>
+        <h1>Let's try</h1>
+        <form method="post" action="/led">
+            <p>Device Host   : <input type="text" name="host"></p>
+            <p>Using Pin     : <input type="text" name="pin"></p>
+            <p>Interval      : <input type="text" name="interval"></p>
+            <p>
+                <input type="radio" name="status" value="on" checked="checked">ON
+                <input type="radio" name="status" value="off">OFF
+                <input type="radio" name="status" value="Remove">Remove
+            </p>
+            <p><input type="submit" value="Confirm"></p>
+        </form>
+    </body>
+</html>
